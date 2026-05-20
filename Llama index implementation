@@ -1,0 +1,105 @@
+# Install Packages
+!pip install -q llama-index
+!pip install -q llama-index-llms-groq
+!pip install -q llama-index-embeddings-huggingface
+!pip install -q llama-index-readers-file
+!pip install -q sentence-transformers
+
+# Imports
+import os
+
+from llama_index.core import VectorStoreIndex
+from llama_index.core import SimpleDirectoryReader
+from llama_index.core import Settings
+
+from llama_index.llms.groq import Groq
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+
+
+# -----------------------------------
+# Set Groq API Key
+# -----------------------------------
+os.environ["GROQ_API_KEY"] = "XXXYYYZZZ"
+
+
+# -----------------------------------
+# Create Sample TXT File
+# -----------------------------------
+sample_text = """
+
+AIDS HOD NAME : DR.DHANABAL
+
+Artificial Intelligence (AI) is a branch of computer science.
+
+Machine Learning (ML) helps systems learn patterns from data and make predictions.
+
+Deep Learning uses neural networks with multiple hidden layers.
+
+Natural Language Processing (NLP) helps computers understand human language.
+
+Large Language Models (LLMs) are trained using huge text datasets.
+
+LlamaIndex helps build Retrieval-Augmented Generation (RAG) applications.
+
+Groq provides ultra-fast inference for AI models.
+"""
+
+with open("sample.txt", "w") as f:
+    f.write(sample_text)
+
+
+# -----------------------------------
+# Load Documents
+# -----------------------------------
+documents = SimpleDirectoryReader(
+    input_files=["sample.txt"]
+).load_data()
+
+
+# -----------------------------------
+# Embedding Model
+# -----------------------------------
+Settings.embed_model = HuggingFaceEmbedding(
+    model_name="sentence-transformers/all-MiniLM-L6-v2"
+)
+
+
+# -----------------------------------
+# Updated Groq Model
+# -----------------------------------
+Settings.llm = Groq(
+    model="llama-3.1-8b-instant",
+    api_key=os.environ["GROQ_API_KEY"]
+)
+
+
+# -----------------------------------
+# Build Index
+# -----------------------------------
+index = VectorStoreIndex.from_documents(documents)
+
+
+# -----------------------------------
+# Query Engine
+# -----------------------------------
+query_engine = index.as_query_engine()
+
+
+# -----------------------------------
+# Chat Loop
+# -----------------------------------
+print("TXT Document Q&A Chatbot")
+print("Type 'exit' to quit\n")
+
+while True:
+
+    question = input("Ask Question: ")
+
+    if question.lower() == "exit":
+        break
+
+    response = query_engine.query(question)
+
+    print("\nAnswer:")
+    print(response)
+    print("\n" + "="*50 + "\n")
